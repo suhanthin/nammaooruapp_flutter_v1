@@ -1,6 +1,7 @@
 import 'dart:core';
 import 'package:flutter/material.dart';
 import '../../common/theme_helper.dart';
+import '../../services/commitee_services.dart';
 import '../profile/myProfile.dart';
 import '/services/auth_services.dart';
 import '/Styles/colors.dart';
@@ -17,42 +18,115 @@ String capitalize(String s) {
 }
 
 class ViewCommitee extends StatefulWidget {
-
   final Map<String, dynamic> commiteeData;
-
   ViewCommitee({required this.commiteeData});
-
   @override
   _ViewCommiteeState createState() => _ViewCommiteeState();
 }
 
 class _ViewCommiteeState extends State<ViewCommitee> {
-  late ChanthaService chanthaService;
+  late CommiteeService commiteeService;
   void signOutUser(BuildContext context) {
     AuthService().signOut(context);
-  }
-
-  void _launchDialPad(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    await launchUrl(launchUri);
   }
 
   @override
   void initState() {
     super.initState();
 
-    chanthaService = ChanthaService();
+    commiteeService = CommiteeService();
   }
+
+  void _showInfoDialog(BuildContext context, Map<String, dynamic> userDetails) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Pay Details'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text('Name: ${userDetails['firstname']} ${userDetails['lastname']}'),
+              Text('Payee Status: ${userDetails['paystatus']}'),
+              if (userDetails['payeefirstname'] != null && userDetails['payeefirstname'].isNotEmpty)
+                Text('Payee Name: ${userDetails['payeefirstname']} ${userDetails['payeelastname']}'),
+              if (userDetails['payeeposition'] != null && userDetails['payeeposition'].isNotEmpty)
+                Text('Payee Position: ${userDetails['payeeposition']}'),
+              if (userDetails['paidDate'] != null && userDetails['paidDate'].isNotEmpty)
+                Text('paid Date: ${userDetails['paidDate']}'),
+              if (userDetails['receiptNo'] != null && userDetails['receiptNo'].isNotEmpty)
+                Text('Receipt No: ${userDetails['receiptNo']}'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            if (userDetails['receiptNo'] != null && userDetails['receiptNo'].isNotEmpty)
+              TextButton(
+                child: Text('View Receipt'),
+                onPressed: () {
+                  _showReceiptInfoDialog(context);
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showReceiptInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            padding: EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'View Receipt',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20.0,
+                  ),
+                ),
+                SizedBox(height: 20.0),
+                // Add your content here
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
-    final effectiveDate = widget.commiteeData["effectiveDate"];
+    final meetingDate = widget.commiteeData["meetingDate"];
+    final isAddAttendance = widget.commiteeData["isAddAttendance"];  
+    final title = widget.commiteeData["title"];  
     final status = widget.commiteeData["status"];  
     final remark = widget.commiteeData["remark"];
-    final chanthaid = widget.commiteeData["_id"];
+    final description = widget.commiteeData["description"];
+    final commiteeid = widget.commiteeData["_id"];
     Color statusColor = Colors.green;
     if(status == 'active'){
       statusColor= Colors.green;
@@ -61,15 +135,15 @@ class _ViewCommiteeState extends State<ViewCommitee> {
     } else if(status == 'delete'){
       statusColor= Colors.black;
     }
-    int amount = widget.commiteeData["amount"];
-    final List<dynamic> rawData = widget.commiteeData["chanthaHistory"];
-    final List<Map<String, dynamic>> data = List<Map<String, dynamic>>.from(rawData);
-
+    int fineAmount = widget.commiteeData["fineAmount"];
+    final List<dynamic> rawData = widget.commiteeData["committeeMeetingHistory"];
+    final List<Map<String, dynamic>> userDetails  = List<Map<String, dynamic>>.from(rawData);
+    print(userDetails);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          "View Chantha Details",
+          "View Commitee Details",
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: primaryColor,
@@ -181,7 +255,7 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                                     ),
                                                   ),
                                                   FractionalTranslation(
-                                                    translation: Offset(2.75, 0),
+                                                    translation: Offset(2.50, 0),
                                                     child: IconButton(
                                                       color: Colors.blue,
                                                       icon: Icon(Icons.edit),
@@ -198,13 +272,13 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                                     ),
                                                   ),
                                                   FractionalTranslation(
-                                                    translation: Offset(3, 0),
+                                                    translation: Offset(2.50, 0),
                                                     child: IconButton(
                                                       color: Colors.blue,
                                                       icon: Icon(Icons.delete),
                                                       onPressed: () {
-                                                        print(chanthaid);
-                                                        _showDeleteConfirmationDialog(context,chanthaid);
+                                                        print(commiteeid);
+                                                        _showDeleteConfirmationDialog(context,commiteeid);
                                                       },
                                                     ),
                                                   ),
@@ -213,7 +287,7 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                             ),
                                           ),
                                           Visibility(
-                                            visible: widget.commiteeData["amount"] != 'null',
+                                            visible: isAddAttendance,
                                             child: Container(
                                               child: Column(
                                                 children: <Widget>[
@@ -224,13 +298,66 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                                       child: Row(
                                                         children: [
                                                           Text(
-                                                            'Amount:',
+                                                            'isAddAttendance:',
                                                             style: TextStyle(
                                                                 fontWeight: FontWeight.bold),
                                                           ),
                                                           SizedBox(width: 10),
-                                                          Text(widget.commiteeData["amount"]
-                                                              .toString()),
+                                                          Text(capitalize(isAddAttendance.toString().toLowerCase())),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 10.0),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible: title != '',
+                                            child: Container(
+                                              child: Column(
+                                                children: <Widget>[
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(
+                                                        left: 25.0, right: 32.0),
+                                                    child: Align(
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            'Title:',
+                                                            style: TextStyle(
+                                                                fontWeight: FontWeight.bold),
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(capitalize(title.toString().toLowerCase())),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 10.0),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible: fineAmount != '',
+                                            child: Container(
+                                              child: Column(
+                                                children: <Widget>[
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(
+                                                        left: 25.0, right: 32.0),
+                                                    child: Align(
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            'Fine Amount:',
+                                                            style: TextStyle(
+                                                                fontWeight: FontWeight.bold),
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(fineAmount.toString()),
                                                         ],
                                                       ),
                                                     ),
@@ -242,7 +369,7 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                           ),
                                           Visibility(
                                             visible:
-                                                widget.commiteeData["effectiveDate"] != 'null',
+                                                meetingDate != '',
                                             child: Container(
                                               child: Column(
                                                 children: <Widget>[
@@ -253,14 +380,12 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                                       child: Row(
                                                         children: [
                                                           Text(
-                                                            'Effective Date:',
+                                                            'Meeting Date:',
                                                             style: TextStyle(
                                                                 fontWeight: FontWeight.bold),
                                                           ),
                                                           SizedBox(width: 10),
-                                                          Text(widget.commiteeData[
-                                                                  "effectiveDate"]
-                                                              .toString()),
+                                                          Text(meetingDate.toString()),
                                                         ],
                                                       ),
                                                     ),
@@ -271,7 +396,34 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                             ),
                                           ),
                                           Visibility(
-                                            visible: widget.commiteeData["status"] != 'null',
+                                            visible: description != '',
+                                            child: Container(
+                                              child: Column(
+                                                children: <Widget>[
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(
+                                                        left: 25.0, right: 32.0),
+                                                    child: Align(
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            'Description:',
+                                                            style: TextStyle(
+                                                                fontWeight: FontWeight.bold),
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(capitalize(description.toString().toLowerCase())),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 10.0),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible: status != '',
                                             child: Container(
                                               child: Column(
                                                 children: <Widget>[
@@ -287,8 +439,34 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                                                 fontWeight: FontWeight.bold),
                                                           ),
                                                           SizedBox(width: 10),
-                                                          Text(widget.commiteeData["status"]
-                                                              .toString()),
+                                                          Text(capitalize(status.toString().toLowerCase()), style: TextStyle(fontWeight: FontWeight.w800,color: statusColor)),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 10.0),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          Visibility(
+                                            visible: remark != '',
+                                            child: Container(
+                                              child: Column(
+                                                children: <Widget>[
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(
+                                                        left: 25.0, right: 32.0),
+                                                    child: Align(
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            'Remark:',
+                                                            style: TextStyle(
+                                                                fontWeight: FontWeight.bold),
+                                                          ),
+                                                          SizedBox(width: 10),
+                                                          Text(capitalize(remark.toString().toLowerCase()), style: TextStyle(fontWeight: FontWeight.w800,color: statusColor)),
                                                         ],
                                                       ),
                                                     ),
@@ -311,7 +489,7 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                               child: Row(
                                                 children: [
                                                   Text(
-                                                    'Chantha Payed History',
+                                                    'Commitee Attendance History',
                                                     style: TextStyle(
                                                       fontWeight: FontWeight.bold,
                                                       fontSize: 16.0,
@@ -322,43 +500,44 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                                               ),
                                             ),
                                           ),
-                                          // Add the ListView.builder here
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                left: 10.0, right: 0, bottom: 5),
-                                            child: ListView.builder(
-                                              shrinkWrap: true,
-                                              physics: NeverScrollableScrollPhysics(),
-                                              itemCount: data.length,
-                                              itemBuilder: (context, index) {
-                                                final record = data[index];
-                                                return ExpansionTile(
-                                                  title: Text('Date: ${record["_id"]}'),
-                                                  children: List.generate(record["records"].length, (recordIndex) {
-                                                    final item = record["records"][recordIndex];
-                                                    return Column(
-                                                      children: [
-                                                        ListTile(
-                                                          title: Text('Member ID: ${item["memberId"]}'),
-                                                          subtitle: Column(
-                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                            children: [
-                                                              Text('Member Name: ${item["firstname"]}'), // additional field
-                                                              Text('Amount: \u{20B9} ${item["amount"]}'),
-                                                              Text('Payee: ${item["payeefirstname"]} ${item["payeelastname"]}'),
-                                                              Text('Payee Position: ${item["payeeposition"]}'),
-                                                            ],
+                                          Column(
+                                            children: List.generate(
+                                              userDetails.length,
+                                              (index) => Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                                child: CheckboxListTile(
+                                                  controlAffinity: ListTileControlAffinity.leading,
+                                                  contentPadding: EdgeInsets.zero,
+                                                  dense: true,
+                                                  title: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${userDetails[index]['lastname']} ${userDetails[index]['firstname']}',
+                                                          style: TextStyle(
+                                                            fontSize: 16.0,
+                                                            color: (userDetails[index]['status'] == 'active') ? Colors.black : Colors.redAccent,
                                                           ),
-                                                          trailing: Text('Status: ${item["status"]}'), // another additional field
                                                         ),
-                                                        if (recordIndex < record["records"].length - 1) Divider(), // Add a divider below the ListTile
-                                                      ],
-                                                    );
-                                                  }),
-                                                );
-                                              },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  secondary: (userDetails[index]['paystatus'] == 'no fine' || userDetails[index]['paystatus'] == 'paid')
+                                                      ? IconButton(
+                                                          icon: Icon(Icons.info_outline),
+                                                          onPressed: () {
+                                                            _showInfoDialog(context, userDetails[index]);
+                                                          },
+                                                        )
+                                                      : null,
+                                                  value: userDetails[index]['attendance'] == true,
+                                                  onChanged: null,
+                                                ),
+                                              ),
                                             ),
                                           ),
+
+
                                         ],
                                       ),
                                     ),
@@ -380,7 +559,7 @@ class _ViewCommiteeState extends State<ViewCommitee> {
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext context, String chanthaid) {
+  void _showDeleteConfirmationDialog(BuildContext context, String commiteeid) {
     TextEditingController reasonController = TextEditingController();
     final _formKey = GlobalKey<FormState>();
     showDialog(
@@ -437,9 +616,9 @@ class _ViewCommiteeState extends State<ViewCommitee> {
                   _formKey.currentState!.save();
                   String reason = reasonController.text;
                   Navigator.of(context).pop();
-                  chanthaService.deleteChanthaDetails(
+                  commiteeService.deleteCommiteeDetails(
                     context: context,
-                    chanthaid: chanthaid,
+                    commiteeid: commiteeid,
                     reason: reason,
                   );
                 }

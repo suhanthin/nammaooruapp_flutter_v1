@@ -52,7 +52,7 @@ class _ChanthaListState extends State<ChanthaList> {
   final ScrollController _firstController = ScrollController();
 
   late ChanthaService chanthaService;
-  late Function getMembersList;
+  late Function getChanthaList;
 
   bool _isLoading = false;
 
@@ -62,7 +62,7 @@ class _ChanthaListState extends State<ChanthaList> {
 
     chanthaService = ChanthaService();
     Future.delayed(const Duration(milliseconds: 1), () {
-      getMembersList();
+      getChanthaList();
       setState(() {
         _isLoading = !_isLoading;
       });
@@ -89,8 +89,8 @@ class _ChanthaListState extends State<ChanthaList> {
 
   @override
   Widget build(BuildContext context) {
-    getMembersList = () async {
-      await chanthaService.getChanthaList(context,);
+    getChanthaList = () async {
+      await chanthaService.getChanthaList(context);
       setState(() {
         _isLoading = !_isLoading;
       });

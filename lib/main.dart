@@ -12,6 +12,7 @@ import '/screens/login/login_screen.dart';
 // import '/screens/chit_dashboard_screen.dart';
 import 'Styles/colors.dart';
 import '/providers/chantha_provider.dart';
+import '/providers/custom_member_provider.dart';
 
 void main() {
   runApp(
@@ -23,6 +24,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => SearchMemberProvider()),
         ChangeNotifierProvider(create: (_) => ChanthaProvider()),
         ChangeNotifierProvider(create: (_) => CommiteeProvider()),
+        ChangeNotifierProvider(create: (_) => CustomMemberProvider()),
       ],
       child: const MyApp(),
     ),

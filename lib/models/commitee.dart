@@ -21,24 +21,24 @@ class CommiteeDetail {
 
   factory CommiteeDetail.fromJson(Map<String, dynamic> json) => CommiteeDetail(
     id: json['_id'],
-    fineAmount: json['fineAmount'],
-    meetingDate: json['meetingDate'],
-    status: json['status']?? '',
-    remark: json['remark']?? '',
+    fineAmount: json['fineAmount']?? '',
+    meetingDate: json['meetingDate']?? '',
+    status: json['status'] ?? '',
+    remark: json['remark'] ?? '',
     isAddAttendance: json['isAddAttendance'] ?? false,
-    title: json['title']?? '',
-    description: json['description']?? '',
+    title: json['title'] ?? '',
+    description: json['description'] ?? '',
   );
 
   Map<String, dynamic> toJson() => {
     '_id': id,
-      'fineAmount': fineAmount,
-      'meetingDate': meetingDate,
-      'status': status,
-      'remark': remark,
-      'isAddAttendance': isAddAttendance,
-      'title': title,
-      'description': description,
+    'fineAmount': fineAmount,
+    'meetingDate': meetingDate,
+    'status': status,
+    'remark': remark,
+    'isAddAttendance': isAddAttendance,
+    'title': title,
+    'description': description,
   };
 }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../models/custom_member.dart';
 import '../screens/commitee/commiteeList.dart';
 import '../screens/commitee/viewCommitee.dart';
 import '/providers/commitee_provider.dart';
@@ -19,6 +20,7 @@ class CommiteeService {
     required bool isAddAttendance,
     required String title,   
     required String description, 
+    required List<CustomMemberDetail> userDetails,
   }) async {
     try {
       var commiteeProvider = Provider.of<CommiteeProvider>(context, listen: false);
@@ -29,7 +31,8 @@ class CommiteeService {
         'remark': remark,
         'isAddAttendance': isAddAttendance,
         'title': title,
-        'description': description
+        'description': description,
+        'userDetails': userDetails
       };
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? accessToken = prefs.getString('x-access-token');
@@ -142,7 +145,7 @@ class CommiteeService {
   ) async {
     try {
       var commiteeProvider = Provider.of<CommiteeProvider>(context, listen: false);
-      Map data = {};
+      Map data = {"status":"active"};
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? accessToken = prefs.getString('x-access-token');
       http.Response res = await http.post(
@@ -194,7 +197,7 @@ class CommiteeService {
           var jsonResponsenew;
           jsonResponsenew = json.decode(res.body);
           //chanthaProvider.setChantha(jsonResponsenew);
-          var jsonResult = json.encode(jsonResponsenew['chanthaDetails']);
+          var jsonResult = json.encode(jsonResponsenew['committeeMeetingDetail']);
           navigator.pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (context) => ViewCommitee(commiteeData: json.decode(jsonResult)),
@@ -263,6 +266,36 @@ class CommiteeService {
       // Log the error and show error snackbar
       print('Error: $e');
       showSnackBar(context, e.toString(), backgroundColor: Colors.red);
+    }
+  }
+
+  getCommiteeMemberList(
+    BuildContext context,
+  ) async {
+    try {
+      var commiteeProvider = Provider.of<CommiteeProvider>(context, listen: false);
+      Map data = {};
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? accessToken = prefs.getString('x-access-token');
+      http.Response res = await http.post(
+        Uri.parse('${Constants.uri}/api/committeeMeeting/list'),
+        body: json.encode(data),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'x-access-token': accessToken.toString(),
+        },
+      );
+      httpErrorHandle(
+        response: res,
+        context: context,
+        onSuccess: () async {
+          var jsonResponsenew;
+          jsonResponsenew = json.decode(res.body);
+          commiteeProvider.setCommitee(jsonResponsenew);
+        },
+      );      
+    } catch (e) {
+      showSnackBar(context, e.toString(),backgroundColor: Colors.red);
     }
   }
 }
